@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,49 +10,101 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type apiconfig struct {
+type CalendarEvent struct {
+	Kind             string    `json:"kind"`
+	Etag             string    `json:"etag"`
+	Summary          string    `json:"summary"`
+	Description      string    `json:"description"`
+	Updated          time.Time `json:"updated"`
+	TimeZone         string    `json:"timeZone"`
+	AccessRole       string    `json:"accessRole"`
+	DefaultReminders []struct {
+		Method  string `json:"method"`
+		Minutes int    `json:"minutes"`
+	} `json:"defaultReminders"`
+	NextSyncToken string `json:"nextSyncToken"`
+	Items         []struct {
+		Kind        string    `json:"kind"`
+		Etag        string    `json:"etag"`
+		ID          string    `json:"id"`
+		Status      string    `json:"status"`
+		HTMLLink    string    `json:"htmlLink"`
+		Created     time.Time `json:"created"`
+		Updated     time.Time `json:"updated"`
+		Summary     string    `json:"summary"`
+		Description string    `json:"description,omitempty"`
+		Location    string    `json:"location,omitempty"`
+		Creator     struct {
+			Email string `json:"email"`
+			Self  bool   `json:"self"`
+		} `json:"creator,omitempty"`
+		Organizer struct {
+			Email string `json:"email"`
+			Self  bool   `json:"self"`
+		} `json:"organizer,omitempty"`
+		Start struct {
+			DateTime string `json:"dateTime"`
+			TimeZone string `json:"timeZone"`
+		} `json:"start"`
+		End struct {
+			DateTime string `json:"dateTime"`
+			TimeZone string `json:"timeZone"`
+		} `json:"end"`
+		Transparency string `json:"transparency,omitempty"`
+		Visibility   string `json:"visibility,omitempty"`
+		ICalUID      string `json:"iCalUID"`
+		Sequence     int    `json:"sequence"`
+		Attendees    []struct {
+			Email          string `json:"email"`
+			Organizer      bool   `json:"organizer"`
+			Self           bool   `json:"self"`
+			ResponseStatus string `json:"responseStatus"`
+		} `json:"attendees"`
+		GuestsCanInviteOthers bool `json:"guestsCanInviteOthers,omitempty"`
+		Reminders             struct {
+			UseDefault bool `json:"useDefault"`
+		} `json:"reminders"`
+		Source struct {
+			URL   string `json:"url"`
+			Title string `json:"title"`
+		} `json:"source,omitempty"`
+		EventType string `json:"eventType"`
+		Creator0  struct {
+			Email string `json:"email"`
+		} `json:"creator,omitempty"`
+		Organizer0 struct {
+			Email string `json:"email"`
+		} `json:"organizer,omitempty"`
+		ConferenceData struct {
+			EntryPoints []struct {
+				EntryPointType string `json:"entryPointType"`
+				URI            string `json:"uri"`
+				Label          string `json:"label"`
+				MeetingCode    string `json:"meetingCode"`
+			} `json:"entryPoints"`
+			ConferenceSolution struct {
+				Key struct {
+					Type string `json:"type"`
+				} `json:"key"`
+				Name    string `json:"name"`
+				IconURI string `json:"iconUri"`
+			} `json:"conferenceSolution"`
+			ConferenceID string `json:"conferenceId"`
+		} `json:"conferenceData,omitempty"`
+	} `json:"items"`
+}
+type apiConfig struct {
 	accessToken string
 	calendarID  string
 }
 
 func main() {
 	godotenv.Load()
-	var apiConf apiconfig
+	var apiConf apiConfig
 	apiConf.accessToken = "Bearer " + os.Getenv("ACCESS_TOKEN")
 	apiConf.calendarID = os.Getenv("CALENDAR_ID")
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /calendar", func(w http.ResponseWriter, r *http.Request) {
-		url := fmt.Sprintf("https://www.googleapis.com/calendar/v3/calendars/%s/events", apiConf.calendarID)
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			log.Printf("GET /calendar Error creating new req %v\n", err)
-			return
-		}
-		req.Header.Set("Authorization", apiConf.accessToken)
-
-		q := req.URL.Query()
-		q.Add("timeMin", time.Now().UTC().Format(time.RFC3339))
-		req.URL.RawQuery = q.Encode()
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			log.Printf("GET /calendar Error fetching data %v\n", err)
-			return
-		}
-		body, err := io.ReadAll(res.Body)
-		res.Body.Close()
-		if res.StatusCode > 200 {
-			log.Printf("GET /calendar Error failed with status code %v\n with body %v\n", res.StatusCode, body)
-			return
-		}
-		if err != nil {
-			log.Printf("GET /calendar Error reading body %v\n", err)
-			return
-		}
-		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(200)
-		w.Write([]byte(body))
-	})
+	mux.HandleFunc("GET /calendar/events", apiConf.handlerEventsGet)
 
 	ServerMux := http.Server{}
 	ServerMux.Handler = mux
