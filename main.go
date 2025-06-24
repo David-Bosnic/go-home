@@ -94,8 +94,9 @@ type CalendarEvent struct {
 	} `json:"items"`
 }
 type apiConfig struct {
-	accessToken string
-	calendarID  string
+	accessToken  string
+	refreshToken string
+	calendarID   string
 }
 
 func main() {
@@ -103,8 +104,10 @@ func main() {
 	var apiConf apiConfig
 	apiConf.accessToken = "Bearer " + os.Getenv("ACCESS_TOKEN")
 	apiConf.calendarID = os.Getenv("CALENDAR_ID")
+	apiConf.refreshToken = os.Getenv("REFRESH_TOKEN")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /calendar/events", apiConf.handlerEventsGet)
+	mux.HandleFunc("GET /admin/refresh", apiConf.refreshAccessTokenGet)
 
 	ServerMux := http.Server{}
 	ServerMux.Handler = mux

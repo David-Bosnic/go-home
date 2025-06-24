@@ -34,6 +34,12 @@ func (config *apiConfig) handlerEventsGet(w http.ResponseWriter, r *http.Request
 	}
 	body, err := io.ReadAll(res.Body)
 	res.Body.Close()
+	if res.StatusCode == 401 {
+		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(401)
+		w.Write([]byte("Refresh OAuth Secret"))
+		return
+	}
 	if res.StatusCode > 200 {
 		log.Printf("GET /calendar/events Error failed with status code %v\n with body %v\n", res.StatusCode, body)
 		return
