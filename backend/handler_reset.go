@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 type Credentials struct {
@@ -44,10 +46,8 @@ func (config *apiConfig) refreshAccessTokenGet(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// BUG:Keep on getting 401 but everything looks fine
 	authURL := "https://oauth2.googleapis.com/token"
 
-	// Properly encode form data
 	encodeData := url.Values{}
 	encodeData.Set("client_id", cred.Web.ClientID)
 	encodeData.Set("client_secret", cred.Web.ClientSecret)
@@ -79,5 +79,15 @@ func (config *apiConfig) refreshAccessTokenGet(w http.ResponseWriter, r *http.Re
 		log.Printf("GET /admin/refresh Error unmarshaling data %v\n", err)
 		return
 	}
-	log.Println(accInfo.AccessToken)
+	config.refreshToken = accInfo.AccessToken
+
+	envMap, err := godotenv.Read(".env")
+	if err != nil {
+		log.Fatal("Error reading .env file:", err)
+	}
+	envMap["ACCESS_TOKEN"] = config.refreshToken
+	err = godotenv.Write(envMap, ".env")
+	if err != nil {
+		log.Fatal("Error writing to .env file:", err)
+	}
 }

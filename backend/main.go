@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type CalendarEvent struct {
@@ -111,6 +110,7 @@ func main() {
 	apiConf.refreshToken = os.Getenv("REFRESH_TOKEN")
 	apiConf.clientID = os.Getenv("CLIENT_ID")
 	apiConf.clientSecret = os.Getenv("CLIENT_SECRET")
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /calendar/events", apiConf.handlerEventsGet)
 	mux.HandleFunc("GET /admin/refresh", apiConf.refreshAccessTokenGet)
