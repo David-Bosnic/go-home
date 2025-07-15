@@ -93,10 +93,14 @@ type CalendarEvent struct {
 		} `json:"conferenceData,omitempty"`
 	} `json:"items"`
 }
+
+// TODO:Maybe make this struct into a init function
 type apiConfig struct {
 	accessToken  string
 	refreshToken string
 	calendarID   string
+	clientID     string
+	clientSecret string
 }
 
 func main() {
@@ -105,9 +109,13 @@ func main() {
 	apiConf.accessToken = "Bearer " + os.Getenv("ACCESS_TOKEN")
 	apiConf.calendarID = os.Getenv("CALENDAR_ID")
 	apiConf.refreshToken = os.Getenv("REFRESH_TOKEN")
+	apiConf.clientID = os.Getenv("CLIENT_ID")
+	apiConf.clientSecret = os.Getenv("CLIENT_SECRET")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /calendar/events", apiConf.handlerEventsGet)
 	mux.HandleFunc("GET /admin/refresh", apiConf.refreshAccessTokenGet)
+	mux.HandleFunc("GET /auth/callback", apiConf.handleOauthCallback)
+	mux.HandleFunc("GET /auth/google", apiConf.startOauthFlow)
 
 	ServerMux := http.Server{}
 	ServerMux.Handler = mux
