@@ -1,24 +1,56 @@
+import { useState } from "react";
 import { GetCalendarEvents } from "../hooks/getCalendarEvents.tsx";
 import type { CalendarEvent } from "../hooks/getCalendarEvents.tsx";
 
 export const CalendarEvents = () => {
     const events: CalendarEvent[] | null = GetCalendarEvents();
+    const [show, setShow] = useState(false);
+
+    if (show) {
+        return (
+            <>
+                <div
+                    className="flex w- "
+                    onClick={() => {
+                        setShow(!show);
+                    }}
+                >
+                    {events?.map((event: CalendarEvent) => (
+                        <div
+                            className={`${setBorderColor(parseDateTime(event.startTime).date)} w-80 h-64 p-6 rounded-3xl border-8 m-5 flex flex-col justify-center space-y-4 text-center`}
+                            key={event.title}
+                        >
+                            <h2 className="truncate text-balance text-orange-500 text-3xl font-bold leading-tight">
+                                {event.title}
+                            </h2>
+                            <h2 className="text-2xl text-gray-500">
+                                `{parseDateTime(event.startTime).day} at{" "}
+                                {parseDateTime(event.startTime).time}`
+                            </h2>
+                        </div>
+                    ))}
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
-            <div className="flex ">
+            <div
+                className="flex "
+                onClick={() => {
+                    setShow(!show);
+                }}
+            >
                 {events?.map((event: CalendarEvent) => (
                     <div
-                        className={`${setBorderColor(parseDateTime(event.startTime).date)} p-10 rounded-3xl border-8 m-5 flex flex-col space-y-12 text-center`}
+                        className={`${setBorderColor(parseDateTime(event.startTime).date)} w-96 h-64 p-6 rounded-3xl border-8 m-5 flex flex-col justify-center space-y-4 text-center`}
                         key={event.title}
                     >
-                        <h2 className="text-balance text-orange-500 text-5xl font-bold leading-tight">
+                        <h2 className="truncate text-balance text-orange-500 text-3xl font-bold leading-tight">
                             {event.title}
                         </h2>
-                        <h2 className="text-5xl text-gray-500">
-                            {parseDateTime(event.startTime).day} at{" "}
-                            {parseDateTime(event.startTime).time}
-                        </h2>
+                        <h2 className="text-2xl text-gray-500">{event.location}</h2>
                     </div>
                 ))}
             </div>
