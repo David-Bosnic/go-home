@@ -93,7 +93,6 @@ type CalendarEvent struct {
 	} `json:"items"`
 }
 
-// TODO:Maybe make this struct into a init function
 type apiConfig struct {
 	accessToken  string
 	refreshToken string
@@ -102,6 +101,7 @@ type apiConfig struct {
 	clientSecret string
 }
 
+// TODO:Change endpoint returns to be more uniformed
 func main() {
 	godotenv.Load()
 	var apiConf apiConfig
@@ -113,9 +113,9 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /calendar/events", apiConf.handlerEventsGet)
-	mux.HandleFunc("GET /admin/refresh", apiConf.refreshAccessTokenGet)
 	mux.HandleFunc("GET /auth/callback", apiConf.handleOauthCallback)
 	mux.HandleFunc("GET /auth/google", apiConf.startOauthFlow)
+	mux.HandleFunc("POST /admin/refresh", apiConf.refreshAccessTokenPost)
 
 	ServerMux := http.Server{}
 	ServerMux.Handler = mux

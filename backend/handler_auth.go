@@ -87,5 +87,5 @@ func (config *apiConfig) handleOauthCallback(w http.ResponseWriter, r *http.Requ
 		log.Fatal("Error writing to .env file:", err)
 	}
 
-	w.Write([]byte("Authorization successful! You can close this window."))
+	w.Write([]byte("Authorization successful. You can close this window."))
 }
