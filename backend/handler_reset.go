@@ -62,9 +62,20 @@ func (config *apiConfig) refreshAccessTokenPost(w http.ResponseWriter, r *http.R
 
 	var tokenResp TokenResponse
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		log.Println("POST /auth/refresh failde to parse JSON %w", err)
+		log.Println("POST /auth/refresh failed to parse JSON %w", err)
 		return
 	}
-	// TODO:Change return statement
-	log.Println(tokenResp)
+	config.accessToken = "Bearer " + tokenResp.AccessToken
+	envMap, err := godotenv.Read(".env")
+	if err != nil {
+		log.Fatal("Error reading .env file:", err)
+	}
+	envMap["ACCESS_TOKEN"] = tokenResp.AccessToken
+	err = godotenv.Write(envMap, ".env")
+	if err != nil {
+		log.Fatal("Error writing to .env file:", err)
+	}
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(200)
+	w.Write([]byte("Successfully refreshed access token"))
 }
