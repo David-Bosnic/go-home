@@ -3,7 +3,7 @@ import { GetCalendarEvents } from "../hooks/getCalendarEvents.tsx";
 import type { CalendarEvent } from "../hooks/getCalendarEvents.tsx";
 
 export const CalendarEvents = () => {
-    const events: CalendarEvent[] | null = GetCalendarEvents();
+    const events: CalendarEvent[] | null = GetCalendarEvents().data;
     const [show, setShow] = useState(false);
 
     if (show) {
@@ -66,42 +66,51 @@ type DateTimeParts = {
 };
 
 function parseDateTime(dateTime: string): DateTimeParts {
-    const dateTimeParsed = dateTime.split("T");
-    const [year, month, day] = dateTimeParsed[0].split("-");
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const date = new Date(dateTime);
     const dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long" });
-    const timeParsed = dateTimeParsed[1].split("-");
+    const time = date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
 
     return {
         thisWeek: false,
         day: dayOfWeek,
         date: date.toDateString(),
-        time: timeParsed[0],
+        time: time,
     };
 }
 
 function setBorderColor(date: string): string {
     const today = new Date();
-    const compareDate = new Date(date);
+    today.setHours(0, 0, 0, 0);
 
-    if (today.toDateString() === compareDate.toDateString()) {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+
+    if (today.getTime() === compareDate.getTime()) {
         return "border-blue-400";
     }
 
     const nextMonday = new Date(today);
-    const daysUntilMonday = (8 - today.getDay()) % 7;
-    nextMonday.setDate(today.getDate() + daysUntilMonday);
-    nextMonday.setHours(0, 0, 0, 0);
+    let daysUntilNextMonday;
+
+    if (today.getDay() === 1) {
+        daysUntilNextMonday = 7;
+    } else if (today.getDay() === 0) {
+        daysUntilNextMonday = 1;
+    } else {
+        daysUntilNextMonday = (8 - today.getDay()) % 7;
+    }
+
+    nextMonday.setDate(today.getDate() + daysUntilNextMonday);
 
     const nextSunday = new Date(nextMonday);
     nextSunday.setDate(nextMonday.getDate() + 6);
-    nextSunday.setHours(23, 59, 59, 999);
-
     if (compareDate >= nextMonday && compareDate <= nextSunday) {
         return "border-gray-300";
     }
 
     return "border-orange-400";
 }
-
-export default CalendarEvents;

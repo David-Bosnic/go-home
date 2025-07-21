@@ -102,6 +102,22 @@ type apiConfig struct {
 }
 
 // TODO:Change endpoint returns to be more uniformed
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	godotenv.Load()
 	var apiConf apiConfig
@@ -112,14 +128,16 @@ func main() {
 	apiConf.clientSecret = os.Getenv("CLIENT_SECRET")
 
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("GET /calendar/events", apiConf.handlerEventsGet)
 	mux.HandleFunc("GET /auth/callback", apiConf.handleOauthCallback)
 	mux.HandleFunc("GET /auth/google", apiConf.startOauthFlow)
 	mux.HandleFunc("POST /admin/refresh", apiConf.refreshAccessTokenPost)
 
-	ServerMux := http.Server{}
-	ServerMux.Handler = mux
-	ServerMux.Addr = ":8080"
+	ServerMux := http.Server{
+		Handler: corsMiddleware(mux),
+		Addr:    ":8080",
+	}
 
 	fmt.Println("Running Server")
 	err := ServerMux.ListenAndServe()
