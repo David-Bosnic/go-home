@@ -7,18 +7,16 @@ export type CalendarEvent = {
     location: string;
 };
 
-export const GetCalendarEvents = () => {
+export const useGetCalendarEvents = (refreshInterval = 10 * 60 * 1000) => {
     const [data, setData] = useState<CalendarEvent[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchEvents = async (): Promise<CalendarEvent[]> => {
         const response = await fetch("http://localhost:8080/calendar/events");
-
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-
         return response.json();
     };
 
@@ -26,40 +24,41 @@ export const GetCalendarEvents = () => {
         const response = await fetch("http://localhost:8080/admin/refresh", {
             method: "POST",
         });
-
         if (!response.ok) {
             throw new Error(`Failed to refresh: HTTP ${response.status}`);
         }
     };
 
-    useEffect(() => {
-        const getEvents = async () => {
+    const getEvents = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const events = await fetchEvents();
+            setData(events);
+        } catch (error) {
+            console.log("Failed to get events, refreshing tokens:", error);
             try {
-                setLoading(true);
-                setError(null);
-
+                await refreshTokens();
+                console.log("Token refresh successful, retrying...");
                 const events = await fetchEvents();
                 setData(events);
-            } catch (error) {
-                console.log("Failed to get events, refreshing tokens:", error);
-
-                try {
-                    await refreshTokens();
-                    console.log("Token refresh successful, retrying...");
-
-                    const events = await fetchEvents();
-                    setData(events);
-                } catch (refreshError) {
-                    console.error("Failed after token refresh:", refreshError);
-                    setError("Failed to load calendar events");
-                }
-            } finally {
-                setLoading(false);
+            } catch (refreshError) {
+                console.error("Failed after token refresh:", refreshError);
+                setError("Failed to load calendar events");
             }
-        };
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         getEvents();
-    }, []);
+        const interval = setInterval(() => {
+            getEvents();
+        }, refreshInterval);
 
-    return { data, loading, error };
+        return () => clearInterval(interval);
+    }, [refreshInterval]);
+
+    return { data, loading, error, refetch: getEvents };
 };

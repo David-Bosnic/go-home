@@ -1,11 +1,29 @@
 import { useState } from "react";
-import { GetCalendarEvents } from "../hooks/getCalendarEvents.tsx";
+import { useGetCalendarEvents } from "../hooks/getCalendarEvents.tsx";
 import type { CalendarEvent } from "../hooks/getCalendarEvents.tsx";
 
 export const CalendarEvents = () => {
-    const events: CalendarEvent[] | null = GetCalendarEvents().data;
+    const { data: events, loading, error } = useGetCalendarEvents();
     const [show, setShow] = useState(false);
+    console.log(error);
+    if (loading) {
+        return (
+            <>
+                <div className="flex w-full">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                        <div
+                            className="w-80 h-64 p-6 rounded-3xl border-8 border-gray-200 m-5 flex flex-col justify-center space-y-4 text-center animate-pulse"
+                            key={`skeleton-${index}`}
+                        >
+                            <div className="h-9 bg-gray-200 rounded-lg mx-auto w-3/4"></div>
 
+                            <div className="h-7 bg-gray-200 rounded-lg mx-auto w-1/2"></div>
+                        </div>
+                    ))}
+                </div>
+            </>
+        );
+    }
     if (show) {
         return (
             <>
@@ -24,8 +42,8 @@ export const CalendarEvents = () => {
                                 {event.title}
                             </h2>
                             <h2 className="text-2xl text-gray-500">
-                                `{parseDateTime(event.startTime).day} at{" "}
-                                {parseDateTime(event.startTime).time}`
+                                {parseDateTime(event.startTime).day} at{" "}
+                                {parseDateTime(event.startTime).time}
                             </h2>
                         </div>
                     ))}
